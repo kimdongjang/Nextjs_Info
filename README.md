@@ -1,5 +1,6 @@
 # Nextjs_Info
-Next js 정리
+Next js 정리  
+https://kyounghwan01.github.io/blog/React/next/getInitialProps/#getinitialprops-%E1%84%8B%E1%85%B5%E1%84%8C%E1%85%A5%E1%86%B7
 
 
 # Next.js
@@ -33,6 +34,11 @@ export default MyApp;
 ## getInitialProps
 #### next v9 이상에서는 getInitialProps 대신 getStaticProps, getStaticPaths, getServerSideProps을 사용
 
+
+
+### getStaticProps
+빌스시 고정되는 값, 빌드 이후 값 변경 불가
+  
 ```js
 function Blog({ posts }) {
   return (
@@ -59,7 +65,12 @@ export async function getStaticProps() {
 
 export default Blog;
 ```
+fetch를 통해 게시물을 가져오고 그 게시물의 title을 보여줌
 
-  
-  
+### getStaticPatch
+빌드 타임 때, 정적으로 렌더링할 경로 설정  
+이곳에 정의하지 않은 하위 경로는 접근해도 페이지가 안뜸  
+동적라우팅 : 라우팅 되는 경우의 수 따져서 하위로 넣음  
+
+
   
