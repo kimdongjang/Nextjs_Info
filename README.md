@@ -1,6 +1,11 @@
 # Nextjs_Info
 Next js 정리  
-https://kyounghwan01.github.io/blog/React/next/getInitialProps/#getinitialprops-%E1%84%8B%E1%85%B5%E1%84%8C%E1%85%A5%E1%86%B7
+https://kyounghwan01.github.io/blog/React/next/getInitialProps/#getinitialprops-%E1%84%8B%E1%85%B5%E1%84%8C%E1%85%A5%E1%86%B7   
+redux https://github.com/kirill-konshin/next-redux-wrapper  
+redux+ts https://jktech.tistory.com/46  
+redux+codepen https://codesandbox.io/s/next-redux-wrapper-demo-7n2t5?file=/components/store.tsx:230-239  
+menu https://basketdeveloper.tistory.com/72  
+routing https://salgum1114.github.io/nextjs/2019-05-24-nextjs-static-website-4/   
 
 
 # Next.js
