@@ -22,40 +22,27 @@ routing https://salgum1114.github.io/nextjs/2019-05-24-nextjs-static-website-4/
 Data Fectching이라는 로직은 CSR에서 사용되는 react의 ```componentDidMount``` 또는 ```useEffect```로 컴포넌트가 마운트를 하고 나서 사용한다.  
 이 과정을 서버에서 미리 처리하도록 도와주는 것이 getInitialProps이고, 내부 로직은 서버에서 실행되며 Client에서만 가능한 로직은 피해야 한다.(```Window```, ```document``` 등)  
 ```js
-export default class MyApp extends App {
+function Page({ stars }) {
+  return <div>Next stars: {stars}</div>
+}
 
-	static async getInitialProps({ Component, ctx }) {
-		let pageProps = {};
-    
-    // 실행하고자 하는 component에 getInitialprops가 있으면 실행하여 props를 받아올 수 있다.
-		if (Component.getInitialProps) {
-			pageProps = await Component.getInitialProps(ctx);
-		}
+Page.getInitialProps = async (ctx) => {
+  const res = await fetch('https://api.github.com/repos/vercel/next.js')
+  const json = await res.json()
+  return { stars: json.stargazers_count }
+}
 
-		return {
-			pageProps
-		};
-	}
-
-	render() {
-		const { Component, pageProps, router } = this.props;
-    
-		return (
-			<div>
-				<Component {...pageProps} />
-			</div>
-
-		);
-	}
-};
+export default Page
 ```  
-ctx Object의 기본 구성
-+ ```pathname``` - 현재 pathname /user?type=normal page 접속 시에는 /user
-+ ```query``` - 현재 query를 object형태로 출력 /user?type=normal page 접속 시에는 {type: 'normal'}
-+ ```asPath``` - 전체 path /user?type=normal page 접속 시에는 /user?type=normal
+getInitialProps는 각 페이지에 static method로 구현한다.  
+page의 Props의 starts는 client로 보내지기 전에 server 측에서 stats값을 받은 후에 보내진다.  
+Context(ctx)는 아래와 같은 기본 구성을 가지고 있다.  
++ ```pathname``` - (string) 현재 route 이름
++ ```query``` - (object) url의 query string section
++ ```asPath``` - (string) query를 포함한 실제 경로명(브라우저에 보이는 주소값)
 + ```req``` - HTTP request object (server only)
 + ```res``` - HTTP response object (server only)
-+ ```err``` - Error object if any error is encountered during the rendering
++ ```err``` - 렌더링 중 오류 발생시 Error object if any error is encountered during the rendering
 
 
 ### getStaticProps
