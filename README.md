@@ -46,9 +46,11 @@ Context(ctx)는 아래와 같은 기본 구성을 가지고 있다.
 
 
 ### getStaticProps
-외부데이터를 받아 Static Generation 하기 위한 용도다.
+서버 측에서만 실행되는 함수로 getStaticProps는 클라이언트 측에서 실행되지 않는다.
+빌드 시에 딱 한 번만 호출 되며, static file로 빌드 되는데, 이 함수는 **API와 같은 외부 데이터**```(SQL, ...)```를 받아 Static Generation 하기 위한 용도다.
   
 ```js
+// getStaticProps()에 의해 빌드시에 게시물이 채워진다.
 function Blog({ posts }) {
   return (
     <ul>
@@ -60,11 +62,11 @@ function Blog({ posts }) {
 }
 
 export async function getStaticProps() {
+  // 외부 API Endpoint로 Call해서 Post로 정보를 가져온다.
   const res = await fetch("https://.../posts");
   const posts = await res.json();
 
-  // By returning { props: posts }, the Blog component
-  // will receive `posts` as a prop at build time
+  // posts 데이터가 담긴 prop를 빌드 시간에 Blog 컴포넌트로 전달한다.
   return {
     props: {
       posts
@@ -74,12 +76,47 @@ export async function getStaticProps() {
 
 export default Blog;
 ```
-fetch를 통해 게시물을 가져오고 그 게시물의 title을 보여줌
++ params: 동적 경로를 사용하는 페이지에 대한 경로 정보를 담는다. 예를 들어, 동적 페이지 파일명이 [id].js인 경우 context.params에 {id:...}가 반환된다.
++ props: 페이지 컴포넌트에서 Props로 전달할 객체  
 
-### getStaticPatch
-빌드 타임 때, 정적으로 렌더링할 경로 설정  
+
+### getStaticPaths
+동적 라우팅(라우팅 되는 경우의 수 따져서 하위로 넣음)을 사용하며, 빌드 타임 때, 정적으로 렌더링할 경로 설정  
 이곳에 정의하지 않은 하위 경로는 접근해도 페이지가 안뜸  
-동적라우팅 : 라우팅 되는 경우의 수 따져서 하위로 넣음  
+```js 
+export async function getStaticPath() {
+  return {
+    paths: [
+      { params: {...} }
+    ],
+    fallback: true or false
+  };
+}
+```
++ paths : 어떤 경로를 pre-rendering할 것인지 명시
++ fallback :
+  + false : paths에 포함되지 않은 404를 리턴
+  + true : getStaticPaths에서 pre-rendering하지 않고 getStaticProps에서 하겠다는 의미.
+
+
+### getServerSideProps
+매 요청마다 페이지를 pre-rendering한다.
+```js
+export async function getServerSideProps(context){
+  return {
+    props: {} ,
+  }
+}
+```
+파라미터  
++ parmas : 동적 라우팅 사용시 받는 params
++ req : HTTP incomingMessage
++ res : HTTP response
++ query : query string
+리턴값  
++ props : 컴포넌트가 받을 props
++ notFound : true일때 404 리턴
++ redirect : 리다이렉트할 페이지 경로
 
 
 
