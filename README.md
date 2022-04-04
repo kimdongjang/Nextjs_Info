@@ -9,9 +9,12 @@ routing https://salgum1114.github.io/nextjs/2019-05-24-nextjs-static-website-4/
 
 
 # Next.js
-1. pages/ 폴더 안에 다른 폴더를 만들면 해당 라우팅의 페이지들은 서버측에서 먼저 로드해줌
+1. ```./pages/``` 폴더 안에 다른 폴더를 만들면 해당 라우팅의 페이지들은 서버측에서 먼저 로드해줌
   
-
+## pre-rendering
+생성된 각 HTML은 최소한의 자바스크립트 코드와 함께 생성되고, 그 js코드는 페이지가 완전히 인터렉티브하도록 한다.(ReactDOM.hydrate) 이것을 hydration이라고 한다.
++ Static Generation(정적 생성) : 개발자가 ```next build```를 실행했을 때 HTML을 생성한다. 보통 데이터에 의존하지 않는 (Data Fetching하지 않는 정적인 페이지들) 페이지들은 모두 이해 해당하며, 페이지의 컨텐츠나 경로가 외부 데이터에 의존할 경우 ```getStaticProps```와 getStaticPaths```를 활용해 HTML을 정적 생성할 수 있다. 이 정적 생성은 사용자의 상호작용에 관계 없이 똑같은 정보를 제공해야 하는 프로모션 페이지에 사용할 수 있다. 반면, User Request에 따라 데이터가 달라져야 한다면 Server-side Rendering을 사용한다.
++ Server-Side Rendering(SSR) : 매 요청마다 데이터를 fetching해야 한다면 ```getServerSideProps```를 사용해 SSR를 구성한다.
 
 ## ServerSide Cycle
 ```js
@@ -22,22 +25,53 @@ function MyApp({ Component, pageProps }) {
 export default MyApp;
  
 ```
-1. 이곳에서 렌더링 하는 값은 모든 페이지에 영향을 줍니다.\
-2. 최초로 실행되는 것은 _app.tsx
-3. _app.tsx은 클라이언트에서 띄우길 바라는 전체 컴포넌트 → 공통 레이아웃임으로 최초 실행되며 내부에 컴포넌트들을 실행함
-4. 내부에 컴포넌트가 있다면 전부 실행하고 html의 body로 구성
-5. Component, pageProps를 받습니다.
-6. 여기서 props로 받은 Component는 요청한 페이지입니다. GET / 요청을 보냈다면, Component 에는 /pages/index.js 파일이 props로 내려오게 됩니다.
-7. pageProps는 페이지 getInitialProps를 통해 내려 받은 props들을 말합니다.
-8. 그 다음 _document.tsx가 실행됨
-9. 페이지를 업데이트 하기 전에 원하는 방식으로 페이지를 업데이트 하는 통로 
-10. 
+#### Next 서버로 요청이 들어왔을때, 요청이 들어온 페이지에 들어갈 데이터를 Fetch하고 Html을 구성하여 client로 보내준다.  
+#### 기본 구성 : ```_app.js``` / ```_document.js```
++ _app.js
+```js
+function MyApp({ Component, pageProps }) {
+  return (
+    <Layout>
+    	<Component {...pageProps} />
+	  </Layout>
+  );
+}
 
-#### 공통적인 데이터 패칭이 필요할 경우 _app.tsx에서 미리 데이터 패칭을 해줌
+export default MyApp;
+```
+props로 받은 Component는 클라이언트가 요청한 페이지다. GET/ 요청을 받았다면 Component에는 ```/pages/index.js``` 파일을 props로 받는다.  
+pageProps는 페이지 getInitialProps를 통해 내려 받은 props들을 말합니다.  
+
+```js
+import Document, { Html, Head, Main, NextScript } from 'next/document'
+
+class MyDocument extends Document {
+  
+  render() {
+    return (
+      <Html>
+        <Head />
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    )
+  }
+}
+
+export default MyDocument
+```
++ _document.js  
+static html을 구성하기 위해 _app.js에서 구성한 html body가 어떤 형태로 구조화되어 생성되는지 구성하는 곳이다.
+
+
   
 
 ## getInitialProps
-#### next v9 이상에서는 getInitialProps 대신 getStaticProps, getStaticPaths, getServerSideProps을 사용
+#### next v9 이상에서는 getInitialProps 대신 getStaticProps, getStaticPaths, getServerSideProps을 사용  
+Data Fectching이라는 로직은 CSR에서 사용되는 react의 ```componentDidMount``` 또는 ```useEffect```로 컴포넌트가 마운트를 하고 나서 사용한다.
+이 과정을 서버에서 미리 처리하도록 도와주는 것이 getInitialProps이다.
 
 
 
