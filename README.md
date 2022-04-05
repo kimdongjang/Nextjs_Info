@@ -181,4 +181,8 @@ export default MyDocument
 + _document.js  
 static html을 구성하기 위해 _app.js에서 구성한 html body가 어떤 형태로 구조화되어 생성되는지 구성하는 곳이다.
 
+
+## Next Redux + Saga 적용
+### Redux는 createSlice사용 (@reduxjs/toolkit)
+
   
