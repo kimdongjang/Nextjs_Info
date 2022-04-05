@@ -182,7 +182,175 @@ export default MyDocument
 static html을 구성하기 위해 _app.js에서 구성한 html body가 어떤 형태로 구조화되어 생성되는지 구성하는 곳이다.
 
 
-## Next Redux + Saga 적용
-### Redux는 createSlice사용 (@reduxjs/toolkit)
+## Next Redux + Saga + Api 적용
+### Redux의 타입 생성
+#### Product.ts
+```js
+export interface Product {
+    message: string;
+    status: string;
+  }
+```
+#### ProductApi.ts 
+```js
+export interface ProductApi {
+    loading: boolean;
+    data: Product;
+    error: AxiosError | null;
+}
+```
+### Redux Reducer+Action 생성(createSlice 사용)
+#### productReducer.ts
+```js
+const initialState: ProductApi = {
+    loading: false,
+    data: { message:"https://images.dog.ceo/breeds/newfoundland/n02111277_7377.jpg", status:"test"},
+    error: null    
+}
 
+const productsSlice = createSlice({
+    name: "products",
+    initialState,
+    reducers: {
+        // 액션에 따른 reducer 로직을 작성한다.
+        // createSlice가 자동으로 state의 타입을 추론한다.
+        // 또한 immer를 사용하고 있어 함수 몸체 안에서 직접 변경해도 불변성을 유지한다.
+        getProducts: (state) =>{
+            state.loading = true;
+        },
+        getProductsSuccess: (state, { payload }) => {
+            state.data = payload;
+            state.loading = false;
+        },
+        getProductsError: (state, {payload })=>{
+            state.error = payload;
+            state.loading = false;
+        }
+    }
+})
+// 정의한 액션과 리듀서를 export한다.
+export const productsActions = productsSlice.actions;
+
+// reducer의 RootState 타입을 지정
+export type ProductState = ReturnType<typeof productsSlice.reducer>;
+
+export default productsSlice;
+```
+### rootReducer 생성
+#### reducers/index.ts
+```js
+import { combineReducers } from "redux";
+import productsSlice from "./productReducer";
+
+const rootReducer = combineReducers(productsSlice.reducer);
+
+export default rootReducer;
+```
+
+### sagaApi 생성. 내부에서 Redux Action 호출
+#### sagas/sagaApi.ts
+```js
+import axios, { AxiosResponse } from "axios";
+import { all, call, fork, put, takeEvery, takeLatest } from "redux-saga/effects";
+import { productsActions } from "../reducers/productReducer";
+
+const CallApi = () => {
+  return axios.get("https://dog.ceo/api/breeds/image/random")
+}
+
+function* getApiProducts() {
+    // yield과정에서 발생하는 error는 catch에서 걸린다.
+    try {
+      // API 요청을 한다.
+      // call(fn)에서 만약 fn이 Promise를 반환한다면 resovle될 때 까지 기다리고 결과를 generate한다.
+      // 따라서 response에는 API 요청 응답이 담기게 된다.
+      // axios를 통해 요청하기 때문에 AxiosResponse로 타입을 명시해준다.
+      const response: AxiosResponse = yield call(CallApi);
+      console.log("Response" + response.data)
+      // put(action)은 action을 dispatch를 한다.
+      yield put(productsActions.getProductsSuccess(response.data));
+    } catch (error) {
+      // 위 과정에서 에러가 발생하면 여기서 다룬다.
+      yield put(productsActions.getProductsError(error));
+    }
+  }
   
+  // 그 다음 getProducts 액션을 감지하는 saga를 작성한다.
+  function* watchGetProducts() {
+    // 만약 getProducts액션 (패턴이라고도 하는데)이 감지되면, getProductsSaga를 호출한다.
+    yield takeLatest(productsActions.getProducts, getApiProducts);
+  }
+  
+  // watchGetProducts를 바로 export 해서 rootSaga에 넣어도 되는데 saga가 여러개 인 경우 saga로 한번더 감싸준다.
+  export default function* getApiProductsSaga() {
+    yield all([fork(watchGetProducts)]);
+  }
+```
+Api주소는 임의로 셋팅
+
+### saga를 호출할 rootSaga 생성
+#### sagas/index.ts
+```js
+import { all, fork } from 'redux-saga/effects';
+import getApiProductsSaga from './sagaApi';
+
+export default function* rootSaga() {
+  yield all([fork(getApiProductsSaga)]);
+}
+```
+
+### reducer와 saga를 nextjs middleware에 적용
+#### modules/store.ts
+```js
+import { createStore, applyMiddleware, compose, Middleware, StoreEnhancer } from "redux";
+import { createWrapper, MakeStore } from "next-redux-wrapper";
+import { createLogger } from "redux-logger";
+import { composeWithDevTools } from "redux-devtools-extension";
+import createSagaMiddleware from "redux-saga";
+import rootSaga from "./sagas";
+import productsSlice from "./reducers/productReducer"
+import rootReducer from "./reducers";
+
+
+// 미들웨어 끼리 묶음
+const bindMiddleware = (middlewares: Middleware[]): StoreEnhancer => {
+  const logger = createLogger();
+
+  if (process.env.NODE_ENV !== "production") {
+    const { composeWithDevTools } = require("redux-devtools-extension");
+    return composeWithDevTools(
+      applyMiddleware(...middlewares),
+      applyMiddleware(logger)
+    );
+  }
+  return compose(applyMiddleware(...middlewares), applyMiddleware(logger));
+};
+
+// Next Redux Wrapper 리듀서와 rootSaga를 묶음
+export const makeStore = () => {
+  const sagaMiddleware = createSagaMiddleware();
+
+  const store = createStore(rootReducer, bindMiddleware([sagaMiddleware]));
+
+  sagaMiddleware.run(rootSaga);
+
+  return store;
+};
+
+export const wrapper = createWrapper(makeStore, { debug: true });
+```
+
+### 메인에서 Redux 사용을 명시
+#### _app.tsx
+```js
+import { NextPage } from "next";
+import { AppProps } from "next/app";
+import React from "react";
+import { wrapper } from "../modules/store";
+
+const MyApp: NextPage<AppProps> = ({ Component, pageProps }: AppProps) => {
+  return <Component {...pageProps} />;
+};
+
+export default wrapper.withRedux(MyApp);
+```
