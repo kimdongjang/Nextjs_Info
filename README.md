@@ -8,6 +8,7 @@ redux+ts https://jktech.tistory.com/46
 redux+ts2 https://sheldhe93.tistory.com/44  
 redux+toolkit https://cotak.tistory.com/164  
 redux+codepen https://codesandbox.io/s/next-redux-wrapper-demo-7n2t5?file=/components/store.tsx:230-239  
+redux+saga https://github.com/dev-palboksoft/nextjs-typescript-redux-saga  
 menu https://basketdeveloper.tistory.com/72  
 routing https://salgum1114.github.io/nextjs/2019-05-24-nextjs-static-website-4/   
 
@@ -230,6 +231,8 @@ const productsSlice = createSlice({
 })
 // 정의한 액션과 리듀서를 export한다.
 export const productsActions = productsSlice.actions;
+// 아래와 같이 actions을 명시하는 것도 가능하다.
+//export const {getProducts,getProductsSuccess,getProductsError } = productsSlice.actions;
 
 // reducer의 RootState 타입을 지정
 export type ProductState = ReturnType<typeof productsSlice.reducer>;
