@@ -184,6 +184,14 @@ static html을 구성하기 위해 _app.js에서 구성한 html body가 어떤 �
 
 
 ## Next Redux + Saga + Api 적용
+### package
+```
+npm i redux
+npm i redux-thunk
+npm i @redux-devtools/extension
+npm i next-redux-wrapper
+```
+
 ### Redux의 타입 생성
 #### Product.ts
 ```js
